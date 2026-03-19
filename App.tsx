@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StoreProvider } from './store';
 import { ViewState } from './types';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import Layout from './components/Layout';
 import BrandForm from './components/BrandForm';
 import AvatarManager from './components/AvatarManager';
@@ -8,7 +9,7 @@ import Generator from './components/Generator';
 import AssetLibrary from './components/AssetLibrary';
 
 const AppContent: React.FC = () => {
-  const [currentView, setCurrentView] = useState<ViewState>('BRAND');
+  const [currentView, setCurrentView] = useLocalStorage<ViewState>('personacopy_view', 'BRAND');
 
   const renderView = () => {
     switch (currentView) {

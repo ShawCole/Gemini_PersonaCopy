@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, ReactNode } from 'react';
 import { BrandIdentity, Avatar, GeneratedAsset } from './types';
+import { useLocalStorage } from './hooks/useLocalStorage';
 
 interface StoreContextType {
   brand: BrandIdentity;
@@ -10,7 +11,6 @@ interface StoreContextType {
   assets: GeneratedAsset[];
   addAsset: (asset: GeneratedAsset) => void;
   deleteAsset: (id: string) => void;
-  isHydrated: boolean;
 }
 
 const defaultBrand: BrandIdentity = {
@@ -25,53 +25,29 @@ const defaultBrand: BrandIdentity = {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [brand, setBrandState] = useState<BrandIdentity>(defaultBrand);
-  const [avatars, setAvatars] = useState<Avatar[]>([]);
-  const [assets, setAssets] = useState<GeneratedAsset[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [brand, setBrand] = useLocalStorage<BrandIdentity>('personacopy_brand', defaultBrand);
+  const [avatars, setAvatars] = useLocalStorage<Avatar[]>('personacopy_avatars', []);
+  const [assets, setAssets] = useLocalStorage<GeneratedAsset[]>('personacopy_assets', []);
 
-  // Load from local storage on mount
-  useEffect(() => {
-    const savedBrand = localStorage.getItem('pc_brand');
-    const savedAvatars = localStorage.getItem('pc_avatars');
-    const savedAssets = localStorage.getItem('pc_assets');
-
-    if (savedBrand) setBrandState(JSON.parse(savedBrand));
-    if (savedAvatars) setAvatars(JSON.parse(savedAvatars));
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
-    setIsHydrated(true);
-  }, []);
-
-  // Persist changes
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem('pc_brand', JSON.stringify(brand));
-      localStorage.setItem('pc_avatars', JSON.stringify(avatars));
-      localStorage.setItem('pc_assets', JSON.stringify(assets));
-    }
-  }, [brand, avatars, assets, isHydrated]);
-
-  const setBrand = (newBrand: BrandIdentity) => setBrandState(newBrand);
-  
-  const addAvatar = (avatar: Avatar) => {
+  const addAvatar = useCallback((avatar: Avatar) => {
     setAvatars(prev => [...prev, avatar]);
-  };
+  }, [setAvatars]);
 
-  const removeAvatar = (id: string) => {
+  const removeAvatar = useCallback((id: string) => {
     setAvatars(prev => prev.filter(a => a.id !== id));
-  };
+  }, [setAvatars]);
 
-  const addAsset = (asset: GeneratedAsset) => {
+  const addAsset = useCallback((asset: GeneratedAsset) => {
     setAssets(prev => [asset, ...prev]);
-  };
+  }, [setAssets]);
 
-  const deleteAsset = (id: string) => {
+  const deleteAsset = useCallback((id: string) => {
     setAssets(prev => prev.filter(a => a.id !== id));
-  };
+  }, [setAssets]);
 
   return (
     <StoreContext.Provider value={{
-      brand, setBrand, avatars, addAvatar, removeAvatar, assets, addAsset, deleteAsset, isHydrated
+      brand, setBrand, avatars, addAvatar, removeAvatar, assets, addAsset, deleteAsset
     }}>
       {children}
     </StoreContext.Provider>
